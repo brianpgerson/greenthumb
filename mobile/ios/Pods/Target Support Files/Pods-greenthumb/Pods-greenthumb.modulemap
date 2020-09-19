@@ -1,0 +1,6 @@
+module Pods_greenthumb {
+  umbrella header "Pods-greenthumb-umbrella.h"
+
+  export *
+  module * { export * }
+}
