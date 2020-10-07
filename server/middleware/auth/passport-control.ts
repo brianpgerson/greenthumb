@@ -11,29 +11,29 @@ export interface UserI {
 }
 
 passport.use(new Strategy({ usernameField: 'email' },
-  async (email, password, done) => {
+  async (email, password, callback) => {
     if (!email && !password) {
-      done(null, false)
+      callback(null, null)
       return;
     }
 
     try {
       const user = await findUserByEmail(email);
       if (user === null) {
-        done(null, false);
+        callback(null, null);
         return;
       }
       
       const match = await bcrypt.compare(password, user.password)
       if (match) {
-        done(null, user)
+        callback(null, user)
         return;
       }
     } catch (e) {
-      done(e);
+      callback(e);
     }
 
-    done(null, false)
+    callback(null, null)
   }));
 
   export default passport;

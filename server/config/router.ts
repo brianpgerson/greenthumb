@@ -5,13 +5,19 @@ import bcrypt from 'bcrypt';
 import config from '../config/config';
 import { verifyJwt, refreshJwt, LoggedInUser } from '../middleware/auth/jwt-middleware';
 
-import { createUser, UserRequest } from '../services/user-service';
+import { createUser, findUserByEmail, UserRequest } from '../services/user-service';
 
 const configureRouter = (router: Router) => {
 
   router.post('/signup', async (req: Request, res: Response) => {  
     const email = req.body.email;
     const password = req.body.password;
+
+    const alreadyExists = await findUserByEmail(email);
+    if (alreadyExists) {
+      return res.status(400).json({ error: 'User with this email already exists.'});
+    }
+
     if (!email || !password) {
       return res.status(400).json({ error: 'Must include email and password in signup request'});
     }
@@ -54,8 +60,9 @@ const configureRouter = (router: Router) => {
 
   router.post('/refresh', refreshJwt, async (req: Request, res: Response) => {
     const { user } = req;
+    console.log('user refresh', user)
     if (user === undefined) {
-      return res.status(500).json({ error: 'Missing user.'});
+      return res.status(401).json({ error: 'Missing user.'});
     }
 
     const liu: LoggedInUser = { email: user.email, userId: user.id };

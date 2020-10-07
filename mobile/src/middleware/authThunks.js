@@ -1,73 +1,129 @@
 import {
   validateJwt,
-  validateJwtFulfilled,
+  completeSignIn,
   validateJwtRejected,
-  setAsyncStorageAuth
+  setAsyncStorageAuth,
+  setAuthError,
 } from '../actions/authActions';
 import { setAppLoading } from '../actions/appActions';
-import { BASE_URL } from '../constants/apiConstants';
+import { BASE_URL, HTTP_STATUS } from '../constants/apiConstants';
 
 import { getAsyncStorageJwt, removeAsyncStorageJwt, setAsyncStorageJwt } from '../utils/asyncStorage'
 
+const failVerify = async (dispatch, authError) => {
+  if (authError) {
+    dispatch(validateJwtRejected({ authError }))
+  }
+  dispatch(setAppLoading(false));
+  await removeAsyncStorageJwt();
+}
+
+const attempRefresh = async (dispatch, accessToken, refreshToken) => {
+  // return failVerify(dispatch) // TODO delete me
+  const refreshResponse = await fetch(`${BASE_URL}/api/refresh`, {
+    method: 'POST',
+    headers: {
+      'xxx-refresh-token': `Token ${refreshToken}`,
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
+
+  if (refreshResponse.status !== HTTP_STATUS.OK) {
+    console.log('Failed to refresh token')
+    return failVerify()
+  } 
+
+  console.log('successfully refreshed token')
+  const { accessToken: refreshedAccessToken } = await refreshResponse.json();
+  dispatch(completeSignIn({ accessToken: refreshedAccessToken, refreshToken }))
+  dispatch(setAppLoading(false));
+}
 
 export const validateJwtAsync = () => async (dispatch) => {
   try {
-    const { accessToken } = await getAsyncStorageJwt()
-    if (!accessToken) {
-      dispatch(setAppLoading(false));
-      return;
+    const tokens = await getAsyncStorageJwt()
+    if (tokens == null) {
+      return dispatch(setAppLoading(false));
     }
-    const response = await fetch("http://localhost:1337/api/verify", {
+
+    const { accessToken, refreshToken } = tokens;
+
+    const response = await fetch(`${BASE_URL}/api/verify`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
     });
+
     const { valid } = await response.json();
     if (valid) {
-      dispatch(validateJwtFulfilled({ accessToken }))
-    } else {
-      dispatch(validateJwtRejected({ authError: "Invalid JWT (use refresh token?)" }))
-      dispatch(setAppLoading(false));
-      await removeAsyncStorageJwt();
+      console.log('valid access token!');
+      dispatch(completeSignIn({ accessToken, refreshToken }))
+      return dispatch(setAppLoading(false));
     }
+
+    if (response.status === HTTP_STATUS.EXPIRED_TOKEN) {
+      console.log('expired access token!');
+      return attempRefresh(dispatch, accessToken, refreshToken);
+    }
+
+    console.log('Error verifying JWT---------No valid token found');
+    await failVerify(dispatch)
+
   } catch(error) {
-    console.log('Getting message Error---------', error);
-    await removeAsyncStorageJwt()
-    dispatch(validateJwtRejected(error))
-    dispatch(setAppLoading(false));
+    console.log('Error verifying JWT---------', error);
+    await failVerify(dispatch)
   }
 }
 
-export const signIn = (loginCreds) => async (dispatch) => { 
-  const result = await fetch(`${BASE_URL}/api/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(loginCreds),
-  });
+export const signIn = (loginCreds) => async (dispatch) => {
+  try {    
+    const result = await fetch(`${BASE_URL}/api/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(loginCreds),
+    });
 
-
-  const { accessToken, refreshToken } = await result.json();
-  console.log(accessToken, refreshToken)
-  set = await setAsyncStorageJwt({ accessToken, refreshToken })
-  got = await getAsyncStorageJwt()
+    if (result.status === HTTP_STATUS.FORBIDDEN) {  
+      dispatch(setAuthError('Invalid credentials!'))
+      return dispatch(setAppLoading(false));  
+    } else {
+      const { accessToken, refreshToken } = await result.json();
+      await setAsyncStorageJwt({ accessToken, refreshToken })
+      dispatch(completeSignIn({ accessToken, refreshToken }))
+      return dispatch(setAppLoading(false));
+    }
+  } catch (e) {
+    dispatch(setAuthError(e.message))
+    return dispatch(setAppLoading(false));
+  }
 }
 
 export const signUp = (loginCreds) => async (dispatch) => {
-  
-  const result = await fetch(`${BASE_URL}/api/signup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(loginCreds),
-  });
+  try {    
+    const result = await fetch(`${BASE_URL}/api/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(loginCreds),
+    });
 
-  const { accessToken, refreshToken } = await result.json();
-  console.log(accessToken, refreshToken)
-  set = await setAsyncStorageJwt({ accessToken, refreshToken })
-  got = await getAsyncStorageJwt()
-  console.log(got);
+    const { accessToken, refreshToken, error } = await result.json();
+
+    if (error) {  
+      dispatch(setAuthError(error))
+      return dispatch(setAppLoading(false));
+    } else {
+      await setAsyncStorageJwt({ accessToken, refreshToken })
+      dispatch(completeSignIn({ accessToken, refreshToken }))
+      return dispatch(setAppLoading(false));
+    }
+  } catch (e) {
+    dispatch(setAuthError(e.message))    
+    return dispatch(setAppLoading(false));
+  }
+  
 }

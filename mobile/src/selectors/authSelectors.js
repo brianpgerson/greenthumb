@@ -8,7 +8,7 @@ export const asyncStorageAuthSelector = createSelector(
 
 export const validatedAuthSelector = createSelector(
   getAuthState, 
-  ({ validatedAuth }) => validatedAuth,
+  ({ validAccessToken }) => validAccessToken,
 );
 
 export const authErrorSelector = createSelector(

@@ -16,26 +16,26 @@ const passport_1 = __importDefault(require("passport"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const passport_local_1 = require("passport-local");
 const user_service_1 = require("../../services/user-service");
-passport_1.default.use(new passport_local_1.Strategy({ usernameField: 'email' }, (email, password, done) => __awaiter(void 0, void 0, void 0, function* () {
+passport_1.default.use(new passport_local_1.Strategy({ usernameField: 'email' }, (email, password, callback) => __awaiter(void 0, void 0, void 0, function* () {
     if (!email && !password) {
-        done(null, false);
+        callback(null, null);
         return;
     }
     try {
         const user = yield user_service_1.findUserByEmail(email);
         if (user === null) {
-            done(null, false);
+            callback(null, null);
             return;
         }
         const match = yield bcrypt_1.default.compare(password, user.password);
         if (match) {
-            done(null, user);
+            callback(null, user);
             return;
         }
     }
     catch (e) {
-        done(e);
+        callback(e);
     }
-    done(null, false);
+    callback(null, null);
 })));
 exports.default = passport_1.default;

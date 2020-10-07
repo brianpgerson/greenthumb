@@ -22,6 +22,10 @@ const configureRouter = (router) => {
     router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const email = req.body.email;
         const password = req.body.password;
+        const alreadyExists = yield user_service_1.findUserByEmail(email);
+        if (alreadyExists) {
+            return res.status(400).json({ error: 'User with this email already exists.' });
+        }
         if (!email || !password) {
             return res.status(400).json({ error: 'Must include email and password in signup request' });
         }
@@ -54,8 +58,9 @@ const configureRouter = (router) => {
     }));
     router.post('/refresh', jwt_middleware_1.refreshJwt, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { user } = req;
+        console.log('user refresh', user);
         if (user === undefined) {
-            return res.status(500).json({ error: 'Missing user.' });
+            return res.status(401).json({ error: 'Missing user.' });
         }
         const liu = { email: user.email, userId: user.id };
         const accessToken = jsonwebtoken_1.default.sign(liu, config_1.default.jwt_secret, { expiresIn: '1d' });
