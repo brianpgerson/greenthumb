@@ -1,19 +1,7 @@
 import { Sequelize } from 'sequelize';
-import config from './config';
+import dbConfig from './sequelize.config';
 
-const { db_name, db_dialect, db_username, db_password, db_host } = config;
-
-const sequelize = new Sequelize(
-  `${db_dialect}://${db_username}:${db_password}@${db_host}:5432/${db_name}`,
-  {
-    define: {
-      underscored: true,
-      charset: 'utf8',
-      timestamps: true
-    },
-    timezone: 'UTC',
-   } 
-)
+const sequelize = new Sequelize(dbConfig);
 
 const testConnection = async (sequelize: Sequelize) => {
   try {

@@ -13,16 +13,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
-const config_1 = __importDefault(require("./config"));
-const { db_name, db_dialect, db_username, db_password, db_host } = config_1.default;
-const sequelize = new sequelize_1.Sequelize(`${db_dialect}://${db_username}:${db_password}@${db_host}:5432/${db_name}`, {
-    define: {
-        underscored: true,
-        charset: 'utf8',
-        timestamps: true
-    },
-    timezone: 'UTC',
-});
+const sequelize_config_1 = __importDefault(require("./sequelize.config"));
+const sequelize = new sequelize_1.Sequelize(sequelize_config_1.default);
 const testConnection = (sequelize) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield sequelize.authenticate();
