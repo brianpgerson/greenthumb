@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 
 import { ErrorText } from '../common/errors';
-import { FormField, FormButton } from '../common/form-components';
+import { mainViewFlex } from '../common/common-styles';
+import { TextFormField, FormButton } from '../common/form-components';
 
 import { signUp } from '../../middleware/authThunks';
 import { authErrorSelector } from '../../selectors/authSelectors';
@@ -26,7 +27,7 @@ const SignInForm = ({ navigation, signUp, setAuthError, authError }) => {
   useFocusEffect(React.useCallback(() => () => setAuthError(null), [setAuthError]));
 
   return (
-    <View style={styles.view}>
+    <View style={styles.mainViewFlex}>
       <View style={styles.logo}>
         <Text>A LOGO</Text>
       </View>
@@ -51,9 +52,9 @@ const SignInForm = ({ navigation, signUp, setAuthError, authError }) => {
         >
           {({ isValid, handleSubmit, ...props  }) => (
             <Fragment>
-              <FormField fieldName={'email'} formProps={props} />
-              <FormField fieldName={'password'} formProps={props} secureTextEntry={true} />
-              <FormField fieldName={'passwordConfirmation'} formProps={props} secureTextEntry={true} placeholder="confirm password" />
+              <TextFormField fieldName={'email'} formProps={props} />
+              <TextFormField fieldName={'password'} formProps={props} secureTextEntry={true} />
+              <TextFormField fieldName={'passwordConfirmation'} formProps={props} secureTextEntry={true} placeholder="confirm password" />
               <FormButton error={authError} isValid={isValid} buttonText={'Sign Up'} submit={handleSubmit} />
             </Fragment>
           )}
@@ -64,13 +65,7 @@ const SignInForm = ({ navigation, signUp, setAuthError, authError }) => {
 };
 
 const styles = StyleSheet.create({
-  view: {
-    backgroundColor: '#04030F',
-    color: '#D6F6DD',
-    flex: 1, 
-    justifyContent: 'space-between', 
-    alignItems: 'center',
-  },
+  mainViewFlex,
   logo: {
     height: 100,
     width: 250,

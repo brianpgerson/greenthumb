@@ -13,6 +13,9 @@ import { validateJwtAsync } from './src/middleware/authThunks';
 
 import SignUpForm from './src/components/auth/signup-form'
 import SignInForm from './src/components/auth/signin-form'
+import Waterings from './src/components/mainScreens/waterings'
+import AddPlantFormModal from './src/components/mainScreens/add-plant-form';
+import { defaultHeaderStyleOptions } from './src/components/common/common-styles';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -25,28 +28,9 @@ import {
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 
-const Stack = createStackNavigator();
+const RootStack = createStackNavigator();
+const HomeStack = createStackNavigator();
 const Tab = createMaterialTopTabNavigator();
-
-const HomeScreen = ({ navigation }) => {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Home Screen</Text>
-      <Button
-        title="Go to Details"
-        onPress={() => navigation.navigate('Details')}
-      />
-    </View>
-  );
-}
-
-function DetailsScreen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Details Screen</Text>
-    </View>
-  );
-}
 
 const SplashScreen = () => (
   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -75,19 +59,31 @@ const AuthTabs = () => {
       tabBarOptions={{
         showIcon: true,
         labelStyle: { fontSize: 10 },
-        indicatorStyle: { backgroundColor: '#d6f6dd' },
-        activeTintColor: '#64F58D',
-        inactiveTintColor: '#BD8B9C',
-        activeBackgroundColor: '#04030F',
-        inactiveBackgroundColor: '#04030F',
-        style: { paddingTop: 10, backgroundColor: '#04030F'},
+        indicatorStyle: { backgroundColor: '#9BCA26' },
+        activeTintColor: '#9BCA26',
+        inactiveTintColor: '#B38A58',
+        activeBackgroundColor: '#15300D',
+        inactiveBackgroundColor: '#15300D',
+        style: { paddingTop: 10, backgroundColor: '#15300D'},
       }}
     >
-      <Stack.Screen name="Sign In" component={SignInForm} />
-      <Stack.Screen name="Sign Up" component={SignUpForm} />
+      <RootStack.Screen name="Sign In" component={SignInForm} />
+      <RootStack.Screen name="Sign Up" component={SignUpForm} />
     </Tab.Navigator>
   );
 };
+
+
+const HomeStackScreen = () => {
+  return (
+    <HomeStack.Navigator initialRouteName="Home">
+      <HomeStack.Screen name="Waterings" 
+          component={Waterings} 
+          options={{ title: 'Your Streak', ...defaultHeaderStyleOptions }}/>
+    </HomeStack.Navigator>
+  );
+}
+
 
 const App = ({ validAuth, appLoading, validateJwtAsync }) => {
   console.log('start')
@@ -102,14 +98,20 @@ const App = ({ validAuth, appLoading, validateJwtAsync }) => {
   
   return (
     <NavigationContainer>
-      <SafeAreaView style={{ flex: 0, backgroundColor: '#04030F' }}/>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#04030F' }}>
+      <SafeAreaView style={{ flex: 0, backgroundColor: '#0E2009' }}/>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#15300D' }}>
       <StatusBar barStyle="light-content" />
         {validAuth ? (
-          <Stack.Navigator initialRouteName="Home">
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Overview' }}/>
-            <Stack.Screen name="Details" component={DetailsScreen} />
-          </Stack.Navigator>
+          <RootStack.Navigator mode="modal">
+            <RootStack.Screen name="Streak" component={HomeStackScreen} options={{ headerShown: false }} />
+            <RootStack.Screen name="Add Plant" 
+                              component={AddPlantFormModal} 
+                              options={{ 
+                                title: 'Add a Plant',  
+                                headerBackTitleVisible: false,
+                                ...defaultHeaderStyleOptions,
+                              }} />
+          </RootStack.Navigator>
         ) : (
           <AuthTabs />
         )}
@@ -121,7 +123,7 @@ const App = ({ validAuth, appLoading, validateJwtAsync }) => {
 
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: 'white',
+    backgroundColor: '#15300D',
   },
 });
 

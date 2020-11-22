@@ -35,6 +35,6 @@ module.exports = {
     });
   },
   down: (queryInterface: QueryInterface, _: any) => {
-    return queryInterface.dropTable('users');
+    return queryInterface.dropTable('plants');
   }
 };

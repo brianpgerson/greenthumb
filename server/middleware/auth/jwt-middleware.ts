@@ -2,10 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken';
 
 import config from '../../config/config';
-import User from "../../models/User";
+import { User } from "../../database/models/User"
 
 export interface LoggedInUser {
-  userId: number;
+  id: number;
   email: string;
 }
 
@@ -47,11 +47,11 @@ export const refreshJwt = async (req: Request, res: Response, next: NextFunction
     const user = jwt.verify(authToken, config.jwt_secret, { ignoreExpiration: true }) as LoggedInUser;
     const refreshUser = jwt.verify(refreshToken, config.jwt_refresh_secret) as LoggedInUser;
 
-    if (user.email !== refreshUser.email || user.userId !== refreshUser.userId) {
+    if (user.email !== refreshUser.email || user.id !== refreshUser.id) {
       return res.status(401).json({ error: 'Mismatched auth and refresh tokens!'});
     }
 
-    const persistedUser = await User.findByPk(user.userId);
+    const persistedUser = await User.findByPk(user.id);
     if (persistedUser !== null) {
       req.user = refreshUser;
       return next();
@@ -60,7 +60,7 @@ export const refreshJwt = async (req: Request, res: Response, next: NextFunction
     res.status(401).json({ error: 'Forbidden' });
   } catch (e) {
     if (e.name === "TokenExpiredError") {
-      console.log('expired token');
+      console.log('expired refresh token');
       return res.status(498).json({ error: e.message });  
     }
 

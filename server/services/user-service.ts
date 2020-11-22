@@ -1,4 +1,4 @@
-import User from '../models/User';
+import { User } from '../database';
 
 export interface UserRequest {
   email: string,

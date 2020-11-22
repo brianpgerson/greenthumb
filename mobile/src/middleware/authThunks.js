@@ -18,8 +18,7 @@ const failVerify = async (dispatch, authError) => {
   await removeAsyncStorageJwt();
 }
 
-const attempRefresh = async (dispatch, accessToken, refreshToken) => {
-  // return failVerify(dispatch) // TODO delete me
+const attemptRefresh = async (dispatch, accessToken, refreshToken) => {
   const refreshResponse = await fetch(`${BASE_URL}/api/refresh`, {
     method: 'POST',
     headers: {
@@ -29,17 +28,20 @@ const attempRefresh = async (dispatch, accessToken, refreshToken) => {
   });
 
   if (refreshResponse.status !== HTTP_STATUS.OK) {
-    console.log('Failed to refresh token')
-    return failVerify()
+    const msg = await refreshResponse.json()
+    console.log('Failed to refresh token', message)
+    return failVerify(dispatch)
   } 
 
   console.log('successfully refreshed token')
   const { accessToken: refreshedAccessToken } = await refreshResponse.json();
+  await setAsyncStorageJwt({ accessToken: refreshedAccessToken, refreshToken })
   dispatch(completeSignIn({ accessToken: refreshedAccessToken, refreshToken }))
   dispatch(setAppLoading(false));
 }
 
 export const validateJwtAsync = () => async (dispatch) => {
+  // return failVerify(dispatch) // TODO delete me
   try {
     const tokens = await getAsyncStorageJwt()
     if (tokens == null) {
@@ -64,7 +66,7 @@ export const validateJwtAsync = () => async (dispatch) => {
 
     if (response.status === HTTP_STATUS.EXPIRED_TOKEN) {
       console.log('expired access token!');
-      return attempRefresh(dispatch, accessToken, refreshToken);
+      return attemptRefresh(dispatch, accessToken, refreshToken);
     }
 
     console.log('Error verifying JWT---------No valid token found');
