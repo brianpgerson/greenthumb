@@ -21,6 +21,8 @@ import { ErrorText } from '../common/errors';
 import { mainViewFlex, labelText } from '../common/common-styles';
 import { TextFormField, SelectFormField, FormButton } from '../common/form-components';
 
+import { addPlant } from '../../middleware/plantApiThunks';
+
 const range = (start, end, length = end - start) => Array.from({ length }, (_, i) => start + i);
 
 const RULE_NUMBER_VALUES = range(1, 31).map(n => ({ label: String(n), value: n }))
@@ -31,7 +33,16 @@ OPTIONAL_RULE_NUMBER_VALUES = RULE_NUMBER_VALUES.map(
 
 PLANT_NAMES = ['Fernie Sanders', 'Leaf Erickson', 'Rooty Giuliani', 'Twiggy Pop']
 
-const AddPlantFormModal = ({ navigation, authError }) => {
+/*
+{"name": "after", "optionalRuleNumber": 10, "ruleCategory": "days", "ruleNumber": 8, "type": "arfter"}
+
+  ruleNumber: number,
+  rangeEnd: number,
+  ruleCategory: string,
+  plantId: number,
+*/
+
+const AddPlantFormModal = ({ navigation, addPlant }) => {
   return (
     <View style={styles.mainViewFlex}>
       <Formik
@@ -39,10 +50,20 @@ const AddPlantFormModal = ({ navigation, authError }) => {
             name: '', 
             type: '', 
             ruleNumber: 7,
-            optionalRuleNumber: '',
+            optionalRuleNumber: 0,
             ruleCategory: 'days',
           }}
-          onSubmit={(args) => console.log(args)}
+          onSubmit={({ name, type, ruleNumber, ruleCategory, optionalRuleNumber }) => {
+            console.log('hello?')
+            const requestObj = {
+              plantRequest: { name, type },
+              scheduleRequest: { ruleNumber, ruleCategory, rangeEnd: optionalRuleNumber || null },
+              startDate: new Date(),
+            }
+
+            console.log(requestObj);
+            addPlant(requestObj)
+          }}
           validationSchema={
             yup.object()
               .shape({
@@ -59,6 +80,7 @@ const AddPlantFormModal = ({ navigation, authError }) => {
                   .number()
                   .test('is-valid-optional', `Must be greater than initial value.`, function (val) {
                     let originalValue = this.parent['ruleNumber'];
+                    console.log(originalValue, val)
                     return val === 0 || val > originalValue;
                   }),
                 ruleCategory: yup
@@ -151,6 +173,7 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = dispatch => (
   bindActionCreators({
+    addPlant,
   }, dispatch)
 );
 

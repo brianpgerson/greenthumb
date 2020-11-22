@@ -127,5 +127,4 @@ export const signUp = (loginCreds) => async (dispatch) => {
     dispatch(setAuthError(e.message))    
     return dispatch(setAppLoading(false));
   }
-  
 }
