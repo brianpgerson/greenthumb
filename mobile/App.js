@@ -4,18 +4,21 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { appLoadingSelector } from './src/selectors/appSelectors';
-import { validatedAuthSelector } from './src/selectors/authSelectors'
+import { validAccessTokenSelector } from './src/selectors/authSelectors'
 import { validateJwtAsync } from './src/middleware/authThunks';
 
 import SignUpForm from './src/components/auth/signup-form'
 import SignInForm from './src/components/auth/signin-form'
 import Waterings from './src/components/mainScreens/waterings'
-import AddPlantFormModal from './src/components/mainScreens/add-plant-form';
+import MyPlants from './src/components/mainScreens/my-plants'
+import AddPlantForm from './src/components/mainScreens/add-plant-form';
 import { defaultHeaderStyleOptions } from './src/components/common/common-styles';
+import MainDrawerContent from './src/components/main-drawer';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -31,6 +34,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 const RootStack = createStackNavigator();
 const HomeStack = createStackNavigator();
 const Tab = createMaterialTopTabNavigator();
+const Drawer = createDrawerNavigator();
 
 const SplashScreen = () => (
   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -74,16 +78,6 @@ const AuthTabs = () => {
 };
 
 
-const HomeStackScreen = () => {
-  return (
-    <HomeStack.Navigator initialRouteName="Home">
-      <HomeStack.Screen name="Waterings" 
-          component={Waterings} 
-          options={{ title: 'Your Streak', ...defaultHeaderStyleOptions }}/>
-    </HomeStack.Navigator>
-  );
-}
-
 
 const App = ({ validAuth, appLoading, validateJwtAsync }) => {
   console.log('start')
@@ -102,16 +96,19 @@ const App = ({ validAuth, appLoading, validateJwtAsync }) => {
       <SafeAreaView style={{ flex: 1, backgroundColor: '#15300D' }}>
       <StatusBar barStyle="light-content" />
         {validAuth ? (
-          <RootStack.Navigator mode="modal">
-            <RootStack.Screen name="Streak" component={HomeStackScreen} options={{ headerShown: false }} />
-            <RootStack.Screen name="Add Plant" 
-                              component={AddPlantFormModal} 
+          <Drawer.Navigator drawerContent={(props) => <MainDrawerContent {...props} />}
+            initialRouteName="Streak" 
+            drawerStyle={{ backgroundColor: '#141414' }}>
+            <Drawer.Screen name="Streak" component={Waterings} options={{ headerShown: false }} />
+            <Drawer.Screen name="My Plants" component={MyPlants} options={{ headerShown: false }} />
+            <Drawer.Screen name="Add Plant" 
+                              component={AddPlantForm} 
                               options={{ 
                                 title: 'Add a Plant',  
                                 headerBackTitleVisible: false,
                                 ...defaultHeaderStyleOptions,
                               }} />
-          </RootStack.Navigator>
+          </Drawer.Navigator>
         ) : (
           <AuthTabs />
         )}
@@ -128,7 +125,7 @@ const styles = StyleSheet.create({
 });
 
 const mapStateToProps = (state) => ({
-  validAuth: validatedAuthSelector(state),
+  validAuth: validAccessTokenSelector(state),
   appLoading: appLoadingSelector(state),
 });
 

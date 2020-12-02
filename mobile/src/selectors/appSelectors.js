@@ -7,7 +7,7 @@ export const appLoadingSelector = createSelector(
   ({ appLoading }) => appLoading,
 );
 
-export const appErrorMessageSelector = createSelector(
+export const apiErrorsSelector = createSelector(
   getAppState, 
-  ({ errorMessage }) => errorMessage,
+  ({ apiErrors }) => apiErrors,
 );

@@ -43,15 +43,19 @@ export const TextFormField = ({
 
 
 export const SelectFormField = ({fieldName, items, styleProp, placeholder, formProps}) => {
-  const { values, errors, touched, setFieldValue } = formProps;
+  const { values, errors, touched, setTouched, setFieldValue } = formProps;
   return (
   <View>
     <RNPickerSelect
         style={styleProp}
         placeholder={placeholder}
-        onValueChange={itemValue => setFieldValue(fieldName, itemValue)}
+        onValueChange={itemValue => {
+          setTouched({ ...touched, [fieldName]: true })
+          setFieldValue(fieldName, itemValue)
+        }}
         value={values[fieldName]} 
         items={items}
+        props={formProps}
     />
     {touched[fieldName] && errors[fieldName] &&
       <Text numberOfLines={1} style={styles.errorTextSelect}>{noCase(errors[fieldName])}</Text>
@@ -89,6 +93,7 @@ const styles = StyleSheet.create({
     color: '#9BCA26',
     width: 300,
     backgroundColor: '#141414',
+    fontSize: 18,
     height: 40,
     paddingLeft: 5,
   },

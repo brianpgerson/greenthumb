@@ -1,7 +1,7 @@
 import {
   SET_ASYNC_STORAGE_AUTH,
   VALIDATE_JWT,
-  VALIDATE_JWT_REJECTED, 
+  SIGN_OUT, 
   SET_AUTH_ERROR,
   COMPLETE_SIGN_IN,
 } from '../actions/authActions';
@@ -18,8 +18,8 @@ const initialState = {
 
 const authReducer = (state = initialState, action) => {
   switch(action.type) {
-      case VALIDATE_JWT_REJECTED:
-        return {...state, validAccessToken: null, authError: action.authError };
+      case SIGN_OUT:
+        return {...state, validAccessToken: null, validRefreshToken: null, authError: action.authError };
       case SET_ASYNC_STORAGE_AUTH:
         return {
           ...state, 

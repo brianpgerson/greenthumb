@@ -1,6 +1,6 @@
 export const SET_ASYNC_STORAGE_AUTH = 'SET_ASYNC_STORAGE_AUTH';
 export const VALIDATE_JWT = 'VALIDATE_JWT';
-export const VALIDATE_JWT_REJECTED = 'VALIDATE_JWT_REJECTED';
+export const SIGN_OUT = 'SIGN_OUT';
 export const COMPLETE_SIGN_IN = 'COMPLETE_SIGN_IN';
 export const SET_AUTH_ERROR = 'SET_AUTH_ERROR';
 
@@ -12,14 +12,14 @@ export const setAsyncStorageAuth = ({ accessToken, refreshToken}) => {
   }
 }
 
-export const validateJwtRejected = (errorMessage) => {
+export const signOut = (errorMessage) => {
   return {
-    type: VALIDATE_JWT_REJECTED,
+    type: SIGN_OUT,
     errorMessage
   };
 }
 
-export const completeSignIn = ({ accessToken, refreshToken}) => {
+export const setCredentials = ({ accessToken, refreshToken}) => {
   return {
     type: COMPLETE_SIGN_IN,
     accessToken,

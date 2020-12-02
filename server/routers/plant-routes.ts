@@ -57,9 +57,8 @@ export const configurePlantRoutes = async (router: Router) => {
       await txn.commit();
       return res.status(200).json({ plant, schedule, nextWatering })
     } catch (e) {
-      console.log('oh no, some kind of error', e)
       await txn.rollback();
-      return res.status(500).json({ errors: e })
+      return res.status(500).json({ errors: e.message })
     }
   })
 

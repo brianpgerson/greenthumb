@@ -1,5 +1,5 @@
 export const SET_APP_LOADING = 'SET_APP_LOADING';
-export const SET_APP_ERROR = 'SET_APP_ERROR';
+export const SET_API_ERRORS = 'SET_API_ERRORS';
 
 export const setAppLoading = (isLoading) => {
   return {
@@ -8,9 +8,9 @@ export const setAppLoading = (isLoading) => {
   };
 };
 
-export const setAppError = (errorMessage) => {
+export const setApiErrors = (apiErrors) => {
   return {
-    type: SET_APP_ERROR,
-    errorMessage
+    type: SET_API_ERRORS,
+    apiErrors
   };
 }
