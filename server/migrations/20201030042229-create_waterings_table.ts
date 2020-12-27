@@ -13,7 +13,7 @@ module.exports = {
         references: {
           model: 'plants',
           key: 'id',
-        }
+        },
       },
       status: {
         type: new DataTypes.STRING(128),

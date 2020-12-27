@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react';
-import { random } from 'lodash';
+import { random, get, sortBy, last } from 'lodash';
 import * as yup from 'yup'
 import { Formik } from 'formik'
 import { connect } from 'react-redux';
@@ -19,10 +19,10 @@ import RNPickerSelect from 'react-native-picker-select';
 
 import { ErrorText } from '../common/errors';
 import ApiErrors from '../common/api-errors';
-import { mainViewFlex, labelText } from '../common/common-styles';
+import { mainViewFlex, labelText, COLORS } from '../common/common-styles';
 import { TextFormField, SelectFormField, FormButton } from '../common/form-components';
 
-import { addPlant } from '../../middleware/plantApiThunks';
+import { addPlant, updatePlant } from '../../middleware/plantApiThunks';
 import { setApiErrors } from '../../actions/appActions';
 
 const range = (start, end, length = end - start) => Array.from({ length }, (_, i) => start + i);
@@ -38,9 +38,65 @@ const DAYS_AGO_VALUES = RULE_NUMBER_VALUES.map(
   ({ value, label }) => ({ value: value, label: value === 1 ? YESTERDAY : `${value} days ago` })
 )
 
-PLANT_NAMES = ['Fernie Sanders', 'Leaf Erickson', 'Rooty Giuliani', 'Twiggy Pop', 'Stemma Watson', 'Philodendron Collins']
+PLANT_NAMES = [
+  'Fernie Sanders', 
+  'Leaf Erickson', 
+  'Rooty Giuliani', 
+  'Twiggy Pop', 
+  'Stemma Watson', 
+  'Philodendron Collins',
+  'Leaf Harvey Oswald'
+];
 
-const AddPlantForm = ({ navigation, setApiErrors }) => {
+const EMPTY_FORM = {
+  name: '',
+  type: '',
+  ruleNumber: 7,
+  optionalRuleNumber: 0,
+  ruleCategory: 'days',
+  daysAgo: '0',
+};
+
+export const daysBetweenDates = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let dayCount = 0;
+
+  while (end > start) {
+    dayCount++;
+    start.setDate(start.getDate() + 1);
+  }
+
+  return dayCount;
+}
+
+const getDaysAgo = ({ waterings = [] }) => {
+  console.log(waterings);
+  const sorted = sortBy(waterings, 'startDate');
+  const lastComplete = last(sorted.filter(w => w.status === 'COMPLETE'));
+  if (!lastComplete) {
+    return 0;
+  }
+
+  const { startDate } = lastComplete;
+  const daysAgo = daysBetweenDates(startDate, new Date());
+  console.log(daysAgo);
+  return daysAgo > 30 ? -1 : daysAgo;
+};
+
+const getEditValues = (editPlant) => ({ 
+  name: editPlant.name,
+  type: editPlant.type,
+  ruleNumber: get(editPlant, ['schedule', 'ruleNumber'], 7),
+  optionalRuleNumber: get(editPlant, ['schedule', 'rangeEnd'], 0) || 0,
+  ruleCategory: get(editPlant, ['schedule', 'ruleCategory'], 'days'),
+  daysAgo: getDaysAgo(editPlant)
+});
+
+const PlantForm = ({ route, navigation, setApiErrors }) => {
+  const editPlant = get(route,  ['params', 'plant'], null);
+
+  const init = editPlant ? getEditValues(editPlant) : EMPTY_FORM
   const [plantName, setPlantName] = React.useState(PLANT_NAMES[random(PLANT_NAMES.length - 1)]);
   useFocusEffect(React.useCallback(() => () => {
     setApiErrors(null);
@@ -50,27 +106,25 @@ const AddPlantForm = ({ navigation, setApiErrors }) => {
   return (
     <View style={styles.mainViewFlex}>
       <Formik
-          initialValues={{ 
-            name: '', 
-            type: '', 
-            ruleNumber: 7,
-            optionalRuleNumber: 0,
-            ruleCategory: 'days',
-            daysAgo: '0'
-          }}
+          enableReinitialize
+          initialValues={init}
           onSubmit={async ({ name, type, ruleNumber, ruleCategory, optionalRuleNumber, daysAgo }, { resetForm }) => {
             const startFromDaysAgo = daysAgo === -1 ? ruleNumber : daysAgo
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - startFromDaysAgo);
-
+            const requestBody = {
+              plantRequest: { name, type },
+              scheduleRequest: { ruleNumber, ruleCategory, rangeEnd: optionalRuleNumber || null },
+              startDate,
+            };
             try {
-              await addPlant({
-                plantRequest: { name, type },
-                scheduleRequest: { ruleNumber, ruleCategory, rangeEnd: optionalRuleNumber || null },
-                startDate,
-              });
+              if (editPlant) {
+                await updatePlant(requestBody, editPlant.id)
+              } else {
+                await addPlant(requestBody);
+              }
               navigation.goBack();
-              resetForm();
+              resetForm(EMPTY);
               return;
             } catch (error) {
               setApiErrors(error.message);
@@ -104,7 +158,7 @@ const AddPlantForm = ({ navigation, setApiErrors }) => {
               })
           }
         >
-          {({ isValid, handleReset, handleSubmit, initialValues, ...props  }) => {
+          {({ isValid, resetForm, handleSubmit, initialValues, ...props  }) => {
             return (
               <Fragment>
               <View>
@@ -145,12 +199,12 @@ const AddPlantForm = ({ navigation, setApiErrors }) => {
                   </View>
                 </View>
                 <View style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <FormButton isValid={isValid} buttonText={'Add Plant'} submit={handleSubmit} />
+                  <FormButton isValid={isValid} buttonText={`${editPlant ? 'Update' : 'Add Plant'}`} submit={handleSubmit} />
                 </View>
                 <ApiErrors />
               </View>
-              <Button onPress={() => { 
-                handleReset();
+              <Button color={COLORS.GREEN.BRIGHT} onPress={() => { 
+                resetForm({ values: EMPTY_FORM, touched: null, errors: null });
                 navigation.goBack();
               }} title="Cancel" />
               </Fragment>
@@ -207,5 +261,5 @@ const mapDispatchToProps = dispatch => (
   }, dispatch)
 );
 
-export default connect(mapStateToProps, mapDispatchToProps)(AddPlantForm);
+export default connect(mapStateToProps, mapDispatchToProps)(PlantForm);
 

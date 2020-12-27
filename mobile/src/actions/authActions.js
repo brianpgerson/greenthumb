@@ -1,16 +1,27 @@
-export const SET_ASYNC_STORAGE_AUTH = 'SET_ASYNC_STORAGE_AUTH';
-export const VALIDATE_JWT = 'VALIDATE_JWT';
 export const SIGN_OUT = 'SIGN_OUT';
 export const COMPLETE_SIGN_IN = 'COMPLETE_SIGN_IN';
 export const SET_AUTH_ERROR = 'SET_AUTH_ERROR';
+export const START_SIGN_IN = 'START_SIGN_IN';
+export const END_SIGN_IN = 'END_SIGN_IN';
+export const SET_CHECKED_JWT = 'SET_CHECKED_JWT';
 
-export const setAsyncStorageAuth = ({ accessToken, refreshToken}) => {
+
+export const startSignIn = () => {
   return {
-    type: SET_ASYNC_STORAGE_AUTH,
-    accessToken,
-    refreshToken,
-  }
+    type: START_SIGN_IN,
+  };
 }
+
+export const endSignIn = () => {
+  return {
+    type: END_SIGN_IN,
+  };
+}
+
+export const setCheckedJwt = (checkedJWT) => ({
+  type: SET_CHECKED_JWT,
+  checkedJWT,
+});
 
 export const signOut = (errorMessage) => {
   return {
@@ -19,7 +30,7 @@ export const signOut = (errorMessage) => {
   };
 }
 
-export const setCredentials = ({ accessToken, refreshToken}) => {
+export const completeSignIn = ({ accessToken, refreshToken}) => {
   return {
     type: COMPLETE_SIGN_IN,
     accessToken,

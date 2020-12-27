@@ -5,7 +5,7 @@ import {
   Text, 
   TextInput, 
   StyleSheet, 
-  Pressable
+  TouchableOpacity
 } from 'react-native';
 
 import RNPickerSelect from 'react-native-picker-select';
@@ -65,9 +65,9 @@ export const SelectFormField = ({fieldName, items, styleProp, placeholder, formP
 
 export const FormButton = ({ error, isValid, buttonText, title, submit }) => (
   <View>
-    <Pressable style={styles.button} disabled={!isValid} title={title || buttonText} onPress={submit}>
+    <TouchableOpacity style={styles.button} disabled={!isValid} title={title || buttonText} onPress={submit}>
       <Text>{buttonText}</Text>
-    </Pressable>
+    </TouchableOpacity>
     { error && (<ErrorText message={error}/>)}
   </View>
 )

@@ -20,3 +20,18 @@ export const authErrorSelector = createSelector(
   getAuthState, 
   ({ authError }) => authError,
 );
+
+export const isSigningInSelector = createSelector(
+  getAuthState,
+  ({ signingIn }) => signingIn,
+)
+
+export const checkedJWTSelector = createSelector(
+  getAuthState,
+  ({ checkedJWT }) => checkedJWT,
+)
+
+export const hasJWTSelector = createSelector(
+  asyncStorageAuthSelector, 
+  ({ accessToken, refreshToken }) => console.log(accessToken, refreshToken) || (accessToken && refreshToken) 
+)

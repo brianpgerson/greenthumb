@@ -1,5 +1,7 @@
 import 'react-native-gesture-handler';
 import React from 'react';
+import * as _ from 'lodash';
+
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { NavigationContainer } from '@react-navigation/native';
@@ -8,16 +10,17 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, } from 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import { appLoadingSelector } from './src/selectors/appSelectors';
-import { validAccessTokenSelector } from './src/selectors/authSelectors'
-import { validateJwtAsync } from './src/middleware/authThunks';
+import { completedInitSelector } from './src/selectors/appSelectors';
+import { validAccessTokenSelector, isSigningInSelector, checkedJWTSelector } from './src/selectors/authSelectors'
+import { attemptSignInWithJWT } from './src/middleware/authThunks';
+import { initializeApp } from './src/middleware/initThunks';
 
 import SignUpForm from './src/components/auth/signup-form'
 import SignInForm from './src/components/auth/signin-form'
-import Waterings from './src/components/mainScreens/waterings'
+import Streak from './src/components/mainScreens/streak-calendar'
 import MyPlants from './src/components/mainScreens/my-plants'
-import AddPlantForm from './src/components/mainScreens/add-plant-form';
-import { defaultHeaderStyleOptions } from './src/components/common/common-styles';
+import PlantForm from './src/components/mainScreens/plant-form';
+import { defaultHeaderStyleOptions, COLORS } from './src/components/common/common-styles';
 import MainDrawerContent from './src/components/main-drawer';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -77,37 +80,46 @@ const AuthTabs = () => {
   );
 };
 
-
-
-const App = ({ validAuth, appLoading, validateJwtAsync }) => {
-  console.log('start')
-  if (!validAuth && appLoading) {
-    console.log('validating')
-    validateJwtAsync()
+const App = ({ 
+  signedIn,
+  checkedJWT,
+  signingIn,
+  initialized,
+  attemptSignInWithJWT,
+ }) => {
+  console.log('starting up!')
+  if (signingIn) {
+    return (<SplashScreen/>);
+  } else if (!checkedJWT && !signedIn && !signingIn) {
+    console.log('going to sign in with JWT!')
+    attemptSignInWithJWT()
+    return (<SplashScreen/>);
+  } else if (signedIn && !initialized) {
+    console.log('initializing app!')
+    initializeApp()
+    return (<SplashScreen/>);
   } 
-  
-  if (appLoading) {
-    return (<SplashScreen />)
-  }
+
   
   return (
     <NavigationContainer>
-      <SafeAreaView style={{ flex: 0, backgroundColor: '#0E2009' }}/>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#15300D' }}>
+      <SafeAreaView style={{ flex: 0, backgroundColor: COLORS.GRAY.DARKEST }}/>
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.GRAY.DARKEST }}>
       <StatusBar barStyle="light-content" />
-        {validAuth ? (
+        {signedIn ? (
           <Drawer.Navigator drawerContent={(props) => <MainDrawerContent {...props} />}
             initialRouteName="Streak" 
-            drawerStyle={{ backgroundColor: '#141414' }}>
-            <Drawer.Screen name="Streak" component={Waterings} options={{ headerShown: false }} />
-            <Drawer.Screen name="My Plants" component={MyPlants} options={{ headerShown: false }} />
+            drawerStyle={{ backgroundColor: COLORS.GRAY.DARKEST }}>
+            <Drawer.Screen name="Streak" component={Streak} options={{ title: "Don't Break the Streak!", headerShown: true, ...defaultHeaderStyleOptions }} />
+            <Drawer.Screen name="My Plants" component={MyPlants} options={{ title: 'My Plants', headerShown: true, ...defaultHeaderStyleOptions }} />
             <Drawer.Screen name="Add Plant" 
-                              component={AddPlantForm} 
-                              options={{ 
-                                title: 'Add a Plant',  
+                              component={PlantForm} 
+                              options={({ route }) => ({ 
+                                title: _.get(route, ['params', 'plant']) ? `Edit ${route.params.plant.name}` : 'Add a Plant',
+                                headerShown: true,
                                 headerBackTitleVisible: false,
                                 ...defaultHeaderStyleOptions,
-                              }} />
+                              })} />
           </Drawer.Navigator>
         ) : (
           <AuthTabs />
@@ -125,14 +137,16 @@ const styles = StyleSheet.create({
 });
 
 const mapStateToProps = (state) => ({
-  validAuth: validAccessTokenSelector(state),
-  appLoading: appLoadingSelector(state),
+  checkedJWT: checkedJWTSelector(state),
+  signingIn: isSigningInSelector(state),
+  signedIn: validAccessTokenSelector(state),
+  initialized: completedInitSelector(state),
 });
 
 
 const mapDispatchToProps = dispatch => (
   bindActionCreators({
-    validateJwtAsync,
+    attemptSignInWithJWT,
   }, dispatch)
 );
 

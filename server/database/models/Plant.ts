@@ -21,10 +21,10 @@ export class Plant extends Model<Plant> {
   @ForeignKey(() => User)
   userId!: number;
 
-  @HasMany(() => Watering)
+  @HasMany(() => Watering, { onDelete: 'CASCADE' })
   waterings: Watering[];
 
-  @HasOne(() => Schedule)
+  @HasOne(() => Schedule, { onDelete: 'CASCADE' })
   schedule: Schedule;
 
   @CreatedAt

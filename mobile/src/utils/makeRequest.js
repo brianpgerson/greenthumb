@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-community/async-storage';
 import { signOutAndRemoveJwt, attemptRefresh } from '../middleware/authThunks';
 import { store } from '../reducers';
 
-import { setApiErrors } from '../actions/appActions';
 import { validAccessTokenSelector, validRefreshTokenSelector } from '../selectors/authSelectors';
 
 import { BASE_URL, HTTP_STATUS } from '../constants/apiConstants';
@@ -10,6 +9,7 @@ import { BASE_URL, HTTP_STATUS } from '../constants/apiConstants';
 export const makeRequest = async (path, method, body, options = {}) => {
   const accessToken = validAccessTokenSelector(store.getState());
   if (!accessToken) {
+    console.log(`no access token for request to ${method} ${path}!`)
     await signOutAndRemoveJwt()
     return;
   }
@@ -45,7 +45,6 @@ export const makeRequest = async (path, method, body, options = {}) => {
     }
 
     throw new Error(resJson.errors);
-    
   } catch(e) {
     console.log(e);
     throw new Error('Internal server error');

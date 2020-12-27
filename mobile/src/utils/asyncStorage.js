@@ -13,7 +13,8 @@ export const getAsyncStorageJwt = async () => {
 }
 
 export const setAsyncStorageJwt = async (tokens) => {
-   try {
+  console.log('setting JWT tokens:', tokens)
+  try {
     const jsonValue = JSON.stringify(tokens)
     await AsyncStorage.setItem(JWT_KEY, jsonValue)
   } catch (e) {
@@ -22,6 +23,7 @@ export const setAsyncStorageJwt = async (tokens) => {
 }
 
 export const removeAsyncStorageJwt = async () => {
+  console.log('removeAsyncStorageJwt')
    try {
     await AsyncStorage.removeItem(JWT_KEY)
   } catch (e) {

@@ -12,10 +12,11 @@ import {
 } from 'react-native';
 
 import { setActiveDrawerScreen } from '../actions/drawerActions';
+import { signOutAndRemoveJwt } from '../middleware/authThunks';
 import { activeDrawerScreenSelector } from '../selectors/drawerSelectors';
 
-const navigateTo = (navigation, title, setter) => () => {
-  setter(title);
+const navigateTo = (navigation, title, setActive) => {
+  setActive(title);
   navigation.navigate(title);
 }
 
@@ -27,7 +28,14 @@ const CustomDrawerItem = ({ onPress, label, active, screenName, navigation, setA
     activeBackgroundColor="#15300D"
     inactiveBackgroundColor="#141414"
     labelStyle={{ color: '#F8FCEE' }}
-    onPress={navigateTo(navigation, screenName, setActive)} />
+    onPress={() => {
+      if (onPress !== undefined) {
+        onPress()
+        setActive(null);
+      } else {
+        navigateTo(navigation, screenName, setActive)
+      }
+    }} />
 )
 
 const MainDrawerContent = ({ navigation, activeScreen, setActiveDrawerScreen }) => (
@@ -46,6 +54,13 @@ const MainDrawerContent = ({ navigation, activeScreen, setActiveDrawerScreen }) 
       screenName="My Plants"
       active={activeScreen} 
       navigation={navigation}
+      setActive={setActiveDrawerScreen}/>
+    <CustomDrawerItem 
+      label="Log Out" 
+      screenName="Sign In"
+      active={activeScreen} 
+      navigation={navigation}
+      onPress={() => signOutAndRemoveJwt()}
       setActive={setActiveDrawerScreen}/>
   </DrawerContentScrollView>
 );

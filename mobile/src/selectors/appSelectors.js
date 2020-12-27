@@ -2,9 +2,9 @@ import { createSelector } from 'reselect';
 
 const getAppState = ({ app }) => app;
 
-export const appLoadingSelector = createSelector(
+export const completedInitSelector = createSelector(
   getAppState, 
-  ({ appLoading }) => appLoading,
+  ({ completedInit }) => completedInit,
 );
 
 export const apiErrorsSelector = createSelector(

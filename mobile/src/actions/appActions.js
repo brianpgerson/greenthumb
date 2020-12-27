@@ -1,10 +1,10 @@
-export const SET_APP_LOADING = 'SET_APP_LOADING';
 export const SET_API_ERRORS = 'SET_API_ERRORS';
+export const SET_COMPLETED_INIT = 'SET_COMPLETED_INIT';
 
-export const setAppLoading = (isLoading) => {
+export const setCompletedInit = (completedInit) => {
   return {
-    type: SET_APP_LOADING,
-    loading: isLoading,
+    type: SET_COMPLETED_INIT,
+    completedInit,
   };
 };
 

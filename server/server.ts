@@ -1,5 +1,7 @@
 import app from "./app"; 
 
-app.listen(process.env.PORT || 1337, () => {
-  console.log("server started");
-})
+const port = process.env.PORT || 1337;
+
+app.listen(port, () => {
+  console.log(`server listening on port ${port}`);
+});

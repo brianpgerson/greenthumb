@@ -18,7 +18,7 @@ export const verifyJwt = async (req: Request, res: Response, next: NextFunction)
   const token = authHeader.split('Bearer ')[1]
   try {
     const user = jwt.verify(token, config.jwt_secret) as LoggedInUser;
-    req.user = user;
+    req.loggedInUser = user;
     return next()    
   } catch (e) {
     if (e.name === 'TokenExpiredError') {
@@ -53,7 +53,7 @@ export const refreshJwt = async (req: Request, res: Response, next: NextFunction
 
     const persistedUser = await User.findByPk(user.id);
     if (persistedUser !== null) {
-      req.user = refreshUser;
+      req.loggedInUser = refreshUser;
       return next();
     }
 

@@ -60,12 +60,12 @@ export const configureAuthRoutes = async (router: Router) => {
   })
 
   router.post('/refresh', refreshJwt, async (req: Request, res: Response) => {
-    const { user } = req;
-    if (user === undefined) {
+    const { loggedInUser } = req;
+    if (loggedInUser === undefined) {
       return res.status(401).json({ error: 'Missing user.'});
     }
 
-    const liu: LoggedInUser = { email: user.email, id: user.id };
+    const liu: LoggedInUser = { email: loggedInUser.email, id: loggedInUser.id };
     console.log('LOG IN LIU: ', JSON.stringify(liu));
     const accessToken = jwt.sign(liu, config.jwt_secret, { expiresIn: '1d' })
 
