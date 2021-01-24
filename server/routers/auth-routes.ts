@@ -5,13 +5,12 @@ import bcrypt from 'bcrypt';
 import config from '../config/config';
 import { verifyJwt, refreshJwt, LoggedInUser } from '../middleware/auth/jwt-middleware';
 
-import { createUser, findUserByEmail, UserRequest } from '../services/user-service';
+import { createUser, findUserByEmail, findUserById, UserRequest } from '../services/user-service';
 
 export const configureAuthRoutes = async (router: Router) => {
 
   router.post('/signup', async (req: Request, res: Response) => {  
-    const email = req.body.email;
-    const password = req.body.password;
+    const { email, password, timezone } = req.body;
 
     const alreadyExists = await findUserByEmail(email);
     if (alreadyExists) {
@@ -23,7 +22,7 @@ export const configureAuthRoutes = async (router: Router) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    var userRequest: UserRequest = { email, password: hashedPassword }
+    var userRequest: UserRequest = { email, password: hashedPassword, timezone }
   
     const user = await createUser(userRequest);
     if (!user) {
@@ -34,7 +33,7 @@ export const configureAuthRoutes = async (router: Router) => {
     const accessToken = jwt.sign(liu, config.jwt_secret, { expiresIn: '7d' })
     const refreshToken = jwt.sign(liu, config.jwt_refresh_secret, { expiresIn: '30d' })
 
-    return res.json({ accessToken, refreshToken })
+    return res.json({ accessToken, refreshToken, user })
   })
   
   router.post('/login', passport.authenticate('local', {
@@ -48,15 +47,20 @@ export const configureAuthRoutes = async (router: Router) => {
   
     const liu: LoggedInUser = { email: user.email, id: user.id };
 
-    console.log('LOG IN LIU: ', JSON.stringify(liu));
     const accessToken = jwt.sign(liu, config.jwt_secret, { expiresIn: '7s' })
     const refreshToken = jwt.sign(liu, config.jwt_refresh_secret, { expiresIn: '30d' })
 
-    return res.json({ accessToken, refreshToken })
+    return res.json({ accessToken, refreshToken, user })
   })
 
   router.post('/verify', verifyJwt, async (req: Request, res: Response) => {
-    return res.status(200).json({ valid: true });
+    const liu = req.loggedInUser;
+    if (!liu) {
+      return res.status(400).json({ valid: false });
+    }
+    
+    const user = await findUserById(liu.id)
+    return res.status(200).json({ valid: true, user });
   })
 
   router.post('/refresh', refreshJwt, async (req: Request, res: Response) => {
@@ -66,10 +70,10 @@ export const configureAuthRoutes = async (router: Router) => {
     }
 
     const liu: LoggedInUser = { email: loggedInUser.email, id: loggedInUser.id };
-    console.log('LOG IN LIU: ', JSON.stringify(liu));
+    const user = await findUserById(liu.id)
     const accessToken = jwt.sign(liu, config.jwt_secret, { expiresIn: '1d' })
 
-    return res.json({ accessToken });
+    return res.json({ accessToken, user });
   })
 
   return router;

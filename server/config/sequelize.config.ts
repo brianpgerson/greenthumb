@@ -9,6 +9,7 @@ const dbConfig: SequelizeOptions = {
   username: db_username,
   password: db_password,
   host: db_host,
+  logging: false,
   port: 5432,
   define: {
     underscored: true,

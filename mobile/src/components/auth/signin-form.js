@@ -45,7 +45,7 @@ const SignInForm = ({ navigation, signIn, setAuthError, authError }) => {
           <Fragment>
             <TextFormField fieldName={'email'} formProps={props} />
             <TextFormField fieldName={'password'} formProps={props} secureTextEntry={true} />
-            <FormButton error={authError} isValid={isValid} buttonText={'Sign In'} submit={handleSubmit} />
+            <FormButton error={authError} isValid={isValid} buttonText={'Sign In'} onPress={handleSubmit} />
           </Fragment>
         )}
         </Formik>

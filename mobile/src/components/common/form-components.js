@@ -7,11 +7,11 @@ import {
   StyleSheet, 
   TouchableOpacity
 } from 'react-native';
+import { Icon } from 'react-native-elements'
 
 import RNPickerSelect from 'react-native-picker-select';
-
 import { ErrorText } from './errors';
-import { labelText } from './common-styles'
+import { labelText, COLORS, PADDING } from './common-styles'
 
 export const TextFormField = ({ 
   fieldName, 
@@ -19,11 +19,12 @@ export const TextFormField = ({
   labelText,
   secureTextEntry = false,
   autoCapitalize = 'none',
+  noMargin,
   formProps,
 }) => {
   const { values, errors, touched, handleChange, setFieldTouched } = formProps;
   return (
-    <View style={{ marginTop: 35 }}>
+    <View style={{ marginTop: noMargin ? 0 : 35 }}>
       {labelText && (<Text style={ styles.labelText }>{labelText}</Text>)}
       <TextInput style={styles.input}
         value={values[fieldName]}
@@ -32,7 +33,7 @@ export const TextFormField = ({
         autoCapitalize={autoCapitalize}
         onBlur={() => setFieldTouched(fieldName)}
         secureTextEntry={secureTextEntry}
-        placeholder={placeholder || fieldName}
+        placeholder={placeholder === null ? '' : placeholder || fieldName}
       />
       {touched[fieldName] && errors[fieldName] &&
         <Text style={styles.errorText}>{noCase(errors[fieldName])}</Text>
@@ -41,6 +42,19 @@ export const TextFormField = ({
   );
 };
 
+
+export const SimpleSelectFormField = ({ fieldName, options, styleProp, placeholder, onValueChange, value }) => {
+  return (
+  <View>
+    <RNPickerSelect
+        style={styleProp}
+        placeholder={placeholder}
+        onValueChange={onValueChange}
+        value={value} 
+        items={options}
+    />
+  </View>
+)}
 
 export const SelectFormField = ({fieldName, items, styleProp, placeholder, formProps}) => {
   const { values, errors, touched, setTouched, setFieldValue } = formProps;
@@ -63,15 +77,40 @@ export const SelectFormField = ({fieldName, items, styleProp, placeholder, formP
   </View>
 )}
 
-export const FormButton = ({ error, isValid, buttonText, title, submit }) => (
+
+export const FormButton = ({ buttonStyle, error, isValid, buttonText, title, onPress }) => (
   <View>
-    <TouchableOpacity style={styles.button} disabled={!isValid} title={title || buttonText} onPress={submit}>
+    <TouchableOpacity style={{ ...styles.button, ...buttonStyle }} title={title || buttonText} onPress={onPress}>
       <Text>{buttonText}</Text>
     </TouchableOpacity>
     { error && (<ErrorText message={error}/>)}
   </View>
 )
 
+export const EditIcon = ({ onPress }) => (
+  <Icon name="edit" 
+        color={COLORS.GREEN.BRIGHT} 
+        containerStyle={{ backgroundColor: COLORS.GREEN.DARK, padding: PADDING.XSMALL, borderRadius: 20 }} 
+        onPress={onPress} />
+);
+
+export const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    fontSize: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    color: '#9BCA26',
+    textDecorationLine: 'underline',
+  },
+  inputAndroid: {
+    fontSize: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    color: '#9BCA26',
+    textDecorationLine: 'underline',
+    paddingRight: 30, // to ensure the text is never behind the icon
+  },
+});
 
 const styles = StyleSheet.create({
   labelText,

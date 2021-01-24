@@ -6,6 +6,8 @@ import {
   endSignIn,
   setCheckedJwt,
 } from '../actions/authActions';
+import { setUser } from '../actions/userActions';
+
 import { BASE_URL, HTTP_STATUS } from '../constants/apiConstants';
 
 import { store } from '../reducers';
@@ -34,7 +36,8 @@ export const attemptRefresh = async (accessToken, refreshToken) => {
     return false;
   } 
 
-  const { accessToken: refreshedAccessToken } = await refreshResponse.json();
+  const { accessToken: refreshedAccessToken, user } = await refreshResponse.json();
+  store.dispatch(setUser(user))
   await setAsyncStorageJwt({ accessToken: refreshedAccessToken, refreshToken })
   store.dispatch(completeSignIn({ accessToken: refreshedAccessToken, refreshToken }))
 
@@ -59,8 +62,9 @@ export const attemptSignInWithJWT = () => async (dispatch) => {
       },
     });
 
-    const { valid } = await response.json();
+    const { valid, user } = await response.json();
     if (valid) {
+      dispatch(setUser(user))
       return dispatch(completeSignIn({ accessToken, refreshToken }))
     }
 
@@ -94,7 +98,8 @@ export const signIn = (loginCreds) => async (dispatch) => {
       return dispatch(endSignIn());
     } 
 
-    const { accessToken, refreshToken } = await result.json();
+    const { accessToken, refreshToken, user } = await result.json();
+    dispatch(setUser(user))
     await setAsyncStorageJwt({ accessToken, refreshToken })
     return dispatch(completeSignIn({ accessToken, refreshToken }))
   } catch (e) {
@@ -114,12 +119,13 @@ export const signUp = (loginCreds) => async (dispatch) => {
       body: JSON.stringify(loginCreds),
     });
 
-    const { accessToken, refreshToken, error } = await result.json();
+    const { accessToken, refreshToken, error, user } = await result.json();
 
     if (error) {  
       dispatch(setAuthError(error))
       return dispatch(endSignIn());
     } else {
+      dispatch(setUser(user));
       await setAsyncStorageJwt({ accessToken, refreshToken })
       dispatch(completeSignIn({ accessToken, refreshToken }))
     }

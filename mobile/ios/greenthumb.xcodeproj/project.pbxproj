@@ -60,6 +60,7 @@
 		60CFB705ADC9A2A3B0F87B25 /* Pods-greenthumb.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-greenthumb.debug.xcconfig"; path = "Target Support Files/Pods-greenthumb/Pods-greenthumb.debug.xcconfig"; sourceTree = "<group>"; };
 		66AACBA8094F12DC3036D3C0 /* Pods-greenthumb-greenthumbTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-greenthumb-greenthumbTests.release.xcconfig"; path = "Target Support Files/Pods-greenthumb-greenthumbTests/Pods-greenthumb-greenthumbTests.release.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = greenthumb/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B10A330125BCB9ED0029AC0D /* greenthumb.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = greenthumb.entitlements; path = greenthumb/greenthumb.entitlements; sourceTree = "<group>"; };
 		C15854B63CD9804D73B7CE90 /* Pods-greenthumb-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-greenthumb-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-greenthumb-tvOS/Pods-greenthumb-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		C6AE19BE654071C2FE38D0D4 /* libPods-greenthumb-greenthumbTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-greenthumb-greenthumbTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE63F45DAA4C5E9CAD36B8E9 /* Pods-greenthumb-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-greenthumb-tvOS.release.xcconfig"; path = "Target Support Files/Pods-greenthumb-tvOS/Pods-greenthumb-tvOS.release.xcconfig"; sourceTree = "<group>"; };
@@ -125,6 +126,7 @@
 		13B07FAE1A68108700A75B9A /* greenthumb */ = {
 			isa = PBXGroup;
 			children = (
+				B10A330125BCB9ED0029AC0D /* greenthumb.entitlements */,
 				008F07F21AC5B25A0029DE68 /* main.jsbundle */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.m */,
@@ -161,7 +163,6 @@
 				4B52D41149BA3C12FF9E1636 /* Pods-greenthumb-tvOSTests.debug.xcconfig */,
 				4CC957476445D8389C309B75 /* Pods-greenthumb-tvOSTests.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -294,7 +295,9 @@
 						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = W4LKT8LKH8;
 						LastSwiftMigration = 1120;
+						ProvisioningStyle = Automatic;
 					};
 					2D02E47A1E0B4A5D006451C7 = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -719,7 +722,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = greenthumb/greenthumb.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W4LKT8LKH8;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = greenthumb/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -730,6 +737,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = greenthumb;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -742,7 +750,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = greenthumb/greenthumb.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W4LKT8LKH8;
 				INFOPLIST_FILE = greenthumb/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = (
@@ -752,6 +764,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = greenthumb;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};

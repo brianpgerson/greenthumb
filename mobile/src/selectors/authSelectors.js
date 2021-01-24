@@ -33,5 +33,5 @@ export const checkedJWTSelector = createSelector(
 
 export const hasJWTSelector = createSelector(
   asyncStorageAuthSelector, 
-  ({ accessToken, refreshToken }) => console.log(accessToken, refreshToken) || (accessToken && refreshToken) 
+  ({ accessToken, refreshToken }) => (accessToken && refreshToken) 
 )

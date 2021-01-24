@@ -6,24 +6,9 @@ import { createPlant, getPlant, updatePlant, getPlants, PlantRequest, deletePlan
 import { createSchedule, ScheduleRequest, updateSchedule } from '../services/schedule-service';
 import { createWatering, updateWatering } from '../services/watering-service';
 import { verifyJwt } from "../middleware/auth/jwt-middleware";
-import { RULE_CATEGORIES, Schedule } from "../database";
 import { STATUS } from "../database/models/Watering";
 import { INTERNAL_SERVER_ERROR } from "../util/errors.constants";
-
-const getEndDate = ({rangeEnd, ruleNumber, ruleCategory}: Schedule, startDate: Date) => {
-  let endDate;
-  if (rangeEnd) {
-    let daysBetween = rangeEnd - ruleNumber;
-    if (ruleCategory === RULE_CATEGORIES.WEEKS) {
-      daysBetween = daysBetween * 7;
-    }
-
-    endDate = new Date();
-    endDate.setDate(startDate.getDate() + daysBetween);
-  }
-
-  return endDate;
-}
+import { getDatesFromLastWatered } from "../util/general-utils";
 
 export const configurePlantRoutes = async (router: Router) => {
 
@@ -61,7 +46,8 @@ export const configurePlantRoutes = async (router: Router) => {
   router.post('/plants', verifyJwt, async (req: Request, res: Response) => {  
     const plantRequest: PlantRequest = req.body.plantRequest;
     const scheduleRequest: ScheduleRequest = req.body.scheduleRequest;
-    const startDate: Date = new Date(req.body.startDate);
+    const lastWatered = req.body.lastWatered;
+
     const { loggedInUser } = req;
     if (!loggedInUser) {
       return res.status(401).json({ errors: `Forbidden`})
@@ -75,6 +61,7 @@ export const configurePlantRoutes = async (router: Router) => {
       const plant = await createPlant({...plantRequest, userId }, txn)
       let schedule = null;
       let nextWatering = null;
+      let lastWatering = null;
       if (plant === null) {
         return res.status(500).json({ errors: `Couldn't create plant!`})
       }
@@ -85,7 +72,18 @@ export const configurePlantRoutes = async (router: Router) => {
           return res.status(500).json({ errors: `Couldn't create watering schedule!`})
         }
 
-        const endDate = getEndDate(schedule, startDate);
+        lastWatering = await createWatering({
+          plantId: plant.id, 
+          startDate: lastWatered,
+          status: STATUS.COMPLETE,
+          wateringDate: lastWatered,
+        }, txn)
+        if (lastWatering === null) {
+          await txn.rollback();
+          return res.status(500).json({ errors: `Couldn't create last watering!`})
+        }
+        
+        const [ startDate, endDate ] = getDatesFromLastWatered(schedule, lastWatered);
         nextWatering = await createWatering({ 
           plantId: plant.id, 
           startDate,
@@ -115,7 +113,7 @@ export const configurePlantRoutes = async (router: Router) => {
     const plantRequest: PlantRequest = req.body.plantRequest;
     const scheduleRequest: ScheduleRequest = req.body.scheduleRequest;
 
-    const startDate = new Date(req.body.startDate);
+    const lastWatered = req.body.lastWatered;
     const txn = await sequelize.transaction();
 
     try {
@@ -125,11 +123,12 @@ export const configurePlantRoutes = async (router: Router) => {
       }
 
       const updatedPlant = await updatePlant(originalPlant, {...plantRequest }, txn)
-      let schedule = null;
-      let nextWatering = null;
       if (updatedPlant === null) {
         return res.status(500).json({ errors: `Couldn't update plant!`})
       }
+      
+      let nextWatering = null;
+      let lastWatering = null;
       if (scheduleRequest !== null) {
         const originalSchedule = originalPlant.schedule;
         const updatedSchedule = await updateSchedule(originalSchedule, { ...scheduleRequest }, txn)
@@ -138,8 +137,35 @@ export const configurePlantRoutes = async (router: Router) => {
           return res.status(500).json({ errors: `Couldn't update watering schedule!`})
         }
 
-        const endDate = getEndDate(originalSchedule, startDate);
-        const nextPendingWatering = originalPlant.waterings.find(w => w.status === STATUS.PENDING)
+        const lastComplete = originalPlant.waterings.find(w => w.status === STATUS.COMPLETE);
+        if (lastComplete) {
+          lastWatering = await updateWatering(
+            lastComplete, 
+            { 
+              plantId: originalPlant.id, 
+              startDate: lastComplete.startDate, 
+              endDate: lastComplete.endDate, 
+              wateringDate: lastWatered,
+              status: STATUS.COMPLETE,
+            }, 
+            txn
+          );
+        } else {     
+          lastWatering = await createWatering({ 
+            plantId: originalPlant.id, 
+            status: STATUS.COMPLETE, 
+            wateringDate: lastWatered,
+            startDate: lastWatered,
+          }, txn);
+        }
+
+        if (lastWatering === null) {
+          await txn.rollback();
+          return res.status(500).json({ errors: `Couldn't update last watering!`})
+        }
+
+        const [ startDate, endDate ] = getDatesFromLastWatered(updatedSchedule, lastWatered);
+        const nextPendingWatering = originalPlant.waterings.find(w => w.status === STATUS.PENDING);
         if (nextPendingWatering) {
           nextWatering = await updateWatering(
             nextPendingWatering, 
@@ -150,9 +176,10 @@ export const configurePlantRoutes = async (router: Router) => {
           nextWatering = await createWatering({ plantId: originalPlant.id, startDate, endDate,}, txn);
         }
 
+        
         if (nextWatering === null) {
           await txn.rollback();
-          return res.status(500).json({ errors: `Couldn't create upcoming watering!`})
+          return res.status(500).json({ errors: `Couldn't update upcoming watering!`})
         }
       }
       await txn.commit();

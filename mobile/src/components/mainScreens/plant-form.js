@@ -1,5 +1,7 @@
 import React, { Component, Fragment } from 'react';
-import { random, get, sortBy, last } from 'lodash';
+import { random, get, sortBy, head } from 'lodash';
+import * as R from 'ramda';
+import { DateTime } from 'luxon';
 import * as yup from 'yup'
 import { Formik } from 'formik'
 import { connect } from 'react-redux';
@@ -11,21 +13,22 @@ import {
   Pressable,
   TextInput,
   Button,
+  Modal,
   StyleSheet,
   Alert,
+  TouchableHighlight,
 } from 'react-native';
-
-import RNPickerSelect from 'react-native-picker-select';
 
 import { ErrorText } from '../common/errors';
 import ApiErrors from '../common/api-errors';
 import { mainViewFlex, labelText, COLORS } from '../common/common-styles';
-import { TextFormField, SelectFormField, FormButton } from '../common/form-components';
+import ModalWrapper from '../common/modal-wrapper';
+import { pickerSelectStyles, TextFormField, SelectFormField, FormButton } from '../common/form-components';
 
-import { addPlant, updatePlant } from '../../middleware/plantApiThunks';
+import { addAndReloadPlants, updateAndReloadPlants, deletePlant, retrieveAndReloadPlants } from '../../middleware/plantApiThunks';
 import { setApiErrors } from '../../actions/appActions';
-
-const range = (start, end, length = end - start) => Array.from({ length }, (_, i) => start + i);
+import { createTwoButtonAlert } from '../common/alert';
+import { range, getToday, toCalendarDay, mapWateringDateStringstoLuxon } from '../../utils/generalUtils';
 
 const RULE_NUMBER_VALUES = range(1, 31).map(n => ({ label: String(n), value: n }))
 
@@ -57,30 +60,16 @@ const EMPTY_FORM = {
   daysAgo: '0',
 };
 
-export const daysBetweenDates = (startDate, endDate) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  let dayCount = 0;
-
-  while (end > start) {
-    dayCount++;
-    start.setDate(start.getDate() + 1);
-  }
-
-  return dayCount;
-}
-
 const getDaysAgo = ({ waterings = [] }) => {
-  console.log(waterings);
-  const sorted = sortBy(waterings, 'startDate');
-  const lastComplete = last(sorted.filter(w => w.status === 'COMPLETE'));
-  if (!lastComplete) {
-    return 0;
-  }
+  const lastComplete = R.pipe(
+    R.filter(R.propEq('status', 'COMPLETE')),
+    R.map(mapWateringDateStringstoLuxon),
+    R.sortBy(R.path(['wateringDate', 'ts'])),
+    R.last,
+  )(waterings)
 
-  const { startDate } = lastComplete;
-  const daysAgo = daysBetweenDates(startDate, new Date());
-  console.log(daysAgo);
+  const { wateringDate } = lastComplete;
+  const daysAgo = getToday().diff(wateringDate, 'days').days;
   return daysAgo > 30 ? -1 : daysAgo;
 };
 
@@ -96,6 +85,21 @@ const getEditValues = (editPlant) => ({
 const PlantForm = ({ route, navigation, setApiErrors }) => {
   const editPlant = get(route,  ['params', 'plant'], null);
 
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const onDeletePress = () => setShowDeleteModal(true);
+  const dismissDeleteModal = () => setShowDeleteModal(false);
+
+  const confirmDelete = (navigation, plantId) => async() => {
+    try {
+      const deleted = await deletePlant(plantId);
+      await retrieveAndReloadPlants();
+      dismissDeleteModal();
+      navigation.navigate('My Plants');
+    } catch (error) {
+      createTwoButtonAlert('Error', 'There was an error deleting this plant! Try again later.');
+    }
+  } 
+
   const init = editPlant ? getEditValues(editPlant) : EMPTY_FORM
   const [plantName, setPlantName] = React.useState(PLANT_NAMES[random(PLANT_NAMES.length - 1)]);
   useFocusEffect(React.useCallback(() => () => {
@@ -109,22 +113,27 @@ const PlantForm = ({ route, navigation, setApiErrors }) => {
           enableReinitialize
           initialValues={init}
           onSubmit={async ({ name, type, ruleNumber, ruleCategory, optionalRuleNumber, daysAgo }, { resetForm }) => {
-            const startFromDaysAgo = daysAgo === -1 ? ruleNumber : daysAgo
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - startFromDaysAgo);
+            const wasWatered = daysAgo !== -1;
+            const lastWateredDaysAgo = wasWatered ? daysAgo : 0;
+            let lastWateredDate = getToday();
+
+            if (wasWatered) {
+              lastWateredDate = lastWateredDate.minus({ days: daysAgo });
+            }
+
             const requestBody = {
               plantRequest: { name, type },
               scheduleRequest: { ruleNumber, ruleCategory, rangeEnd: optionalRuleNumber || null },
-              startDate,
+              lastWatered: wasWatered ? lastWateredDate.toISODate() : null,
             };
             try {
               if (editPlant) {
-                await updatePlant(requestBody, editPlant.id)
+                await updateAndReloadPlants(requestBody, editPlant.id)
               } else {
-                await addPlant(requestBody);
+                await addAndReloadPlants(requestBody);
               }
+              resetForm(EMPTY_FORM);
               navigation.goBack();
-              resetForm(EMPTY);
               return;
             } catch (error) {
               setApiErrors(error.message);
@@ -161,6 +170,20 @@ const PlantForm = ({ route, navigation, setApiErrors }) => {
           {({ isValid, resetForm, handleSubmit, initialValues, ...props  }) => {
             return (
               <Fragment>
+                {editPlant ? (<ModalWrapper 
+                  modalTitle={`Delete ${editPlant.name}?`}
+                  modalVisible={showDeleteModal} 
+                  onDismiss={dismissDeleteModal}
+                  actions={[
+                    { 
+                      onPress: confirmDelete(navigation, editPlant.id), 
+                      text: "Delete", 
+                      extraStyles: { backgroundColor: COLORS.RED.BRIGHT, borderWidth: 0 }  }
+                    ]}>
+                  <View style={{ paddingVertical: 25 }}>
+                    <Text style={{ color: COLORS.GRAY.LIGHTMED }}>Are you sure you want to delete this plant?</Text>
+                  </View>
+                </ModalWrapper>) : null}
               <View>
                 <TextFormField labelText="Name:" fieldName="name" placeholder={plantName} formProps={props} />
                 <TextFormField labelText="Type:" fieldName="type" placeholder="Monstera" formProps={props}  />
@@ -199,7 +222,14 @@ const PlantForm = ({ route, navigation, setApiErrors }) => {
                   </View>
                 </View>
                 <View style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <FormButton isValid={isValid} buttonText={`${editPlant ? 'Update' : 'Add Plant'}`} submit={handleSubmit} />
+                  <FormButton isValid={isValid} buttonText={`${editPlant ? 'Update' : 'Add Plant'}`} onPress={handleSubmit} />
+                  {editPlant ? (
+                    <FormButton 
+                      isValid={true} 
+                      buttonStyle={{ backgroundColor: COLORS.RED.BRIGHT }} 
+                      buttonText="Delete" 
+                      onPress={onDeletePress} 
+                    />) : null}
                 </View>
                 <ApiErrors />
               </View>
@@ -228,26 +258,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-  },
-});
-
-const pickerSelectStyles = StyleSheet.create({
-  inputIOS: {
-    fontSize: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    color: '#9BCA26',
-    textDecorationLine: 'underline',
-  },
-  inputAndroid: {
-    fontSize: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderWidth: 0.5,
-    borderColor: 'purple',
-    borderRadius: 8,
-    color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
   },
 });
 

@@ -56,6 +56,12 @@ const MainDrawerContent = ({ navigation, activeScreen, setActiveDrawerScreen }) 
       navigation={navigation}
       setActive={setActiveDrawerScreen}/>
     <CustomDrawerItem 
+      label="Profile" 
+      screenName="Profile"
+      active={activeScreen} 
+      navigation={navigation}
+      setActive={setActiveDrawerScreen}/>
+    <CustomDrawerItem 
       label="Log Out" 
       screenName="Sign In"
       active={activeScreen} 

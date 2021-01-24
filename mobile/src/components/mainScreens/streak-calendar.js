@@ -12,187 +12,108 @@ import {
   TouchableHighlight,
 } from 'react-native';
 
-import { allWateringsSelector, overdueWateringsSelector } from '../../selectors/plantSelectors';
-import { mainViewFlex, COLORS } from '../common/common-styles';
-import { isBefore } from '../../utils/generalUtils';
+import { calendarListOfWateringsSelector, dueWateringsSelector } from '../../selectors/plantSelectors';
+import { mainViewFlex, headerText, COLORS } from '../common/common-styles';
+import WateringCell from '../watering-cell';
+import WateringGroup from '../watering-group';
+import PendingWateringModal from '../pending-watering-modal';
+import PreviousWateringModal from '../previous-watering-modal';
+import { toCalendarDay, getToday } from '../../utils/generalUtils';
 
-const FlatListItemSeparator = ({ leadingItem }) => {
-  const continuations = leadingItem.waterings.filter(w => isBefore(w.startDate, w.date))
-  return (
-    <View style={styles.separator}>
-      {renderWaterings(continuations, { ignorePadding: true, ignoreText: true })}
-    </View>
-  );
-}
+const getWidthBasedOn = (numCols) => `${Math.ceil((100/3) * numCols)}%`;
 
-const renderWaterings = (waterings, options = {}) => {
-  if (waterings.length === 0) {
-    return null
-  }
-
-  const { date } = waterings[0];
-  const byColIdx = R.indexBy(R.prop('columnIdx'), waterings);
-
-  const grouped = waterings.filter(R.propSatisfies(R.lt(2), 'columnIdx'))
-  const columns = [
-    byColIdx[0] || { blank: true, date, columnIdx: 0 },
-    byColIdx[1] || { blank: true, date, columnIdx: 1 },
-    byColIdx[2] || { blank: true, date, columnIdx: 2 },
-    grouped.length > 0 ? grouped : { blank: true, date, columnIdx: 3 },
-  ]
-
-  return (
-  <View style={styles.wateringsSubContainer}>
-    {columns.map(w => renderWatering(w, options))}
-  </View>
-)}
-
-const WateringGroup = ({ waterings }) => (
-  <View style={{ 
-    width: '25%',
-    paddingTop: 40,
-    paddingBottom:  20,
-  }}>
-    <TouchableHighlight
-      activeOpacity={1}
-      underlayColor={COLORS.GREEN.BRIGHT}
-      style={{
-        backgroundColor: COLORS.GREEN.BRIGHT,
-        width: '100%',
-        height: '100%',
-        borderRadius: 5,
-      }}
-      onPress={() => alert('Pressed watering: ' + JSON.stringify(waterings, null, 2))}>
-      <Text style={styles.entryText}>{waterings.length} more...</Text>
-    </TouchableHighlight>
-  </View> 
-)
-
-const BlankWatering = () => (<View style={{ width: '30%', marginRight: 10 }} />)
-
-const renderWatering = (watering, { ignorePadding, ignoreText }) => {
-  if (watering.blank) {
-    return (<BlankWatering key={`${watering.date}|${watering.columnIdx}`} />)
-  }
-
+const renderPreviousWatering = (watering) => {
   if (Array.isArray(watering)) {
     const key = R.pipe(
       R.map(R.props(['id', 'date'])),
       R.flatten,
       R.join('|')
     )(watering)
-    return (<WateringGroup key={key} waterings={watering} />)
+    return (<WateringGroup key={key} waterings={watering}/>)
   }
 
-  const hitsTopEdge = ignorePadding || 
-    (!watering.forceStartNewColumn && isBefore(watering.date, watering.endDate))
-  const hitsBottomEdge = ignorePadding || isBefore(watering.startDate, watering.date)
-
-  const shouldIgnoreText = ignoreText || (watering.date !== watering.endDate && !watering.forceStartNewColumn);
-  
-  const name = shouldIgnoreText ? null : watering.name;
-  const type = shouldIgnoreText ? null : watering.type;
-  return (
-    <View key={watering.id} style={{ 
-      width: '30%',
-      paddingTop: hitsTopEdge ? 0 : 20,
-      paddingBottom: hitsBottomEdge ? 0 : 20,
-      marginRight: 10,
-    }}>
-      <TouchableHighlight
-        activeOpacity={1}
-        underlayColor={COLORS.GREEN.BRIGHT}
-        style={{
-          backgroundColor: COLORS.GREEN.BRIGHT,
-          width: '100%',
-          height: '100%',
-          borderTopRightRadius: hitsTopEdge ? 0 : 5,
-          borderTopLeftRadius: hitsTopEdge ? 0 : 5,
-          borderBottomRightRadius: hitsBottomEdge ? 0 : 5,
-          borderBottomLeftRadius: hitsBottomEdge ? 0 : 5,
-        }}
-        onPress={() => alert('Pressed watering: ' + JSON.stringify(watering, null, 2))}>
-        <View>
-          <Text style={styles.entryText}>{name}</Text>
-          <Text numberOfLines={1} style={{ padding: 3 }}>{type}</Text>
-        </View>
-      </TouchableHighlight>
-    </View>
-  );
+  return <WateringCell key={watering.id} watering={watering} readOnly={true} />;
 }
 
-const renderRow = (row) => (
-  <View style={styles.todayRow}>
-    {row.map(watering => {
-      const { name, type, overdue } = watering;
-      return (
-        <TouchableHighlight 
-          style={styles.wateringCell(overdue) }
-          underlayColor={COLORS.GRAY.LIGHTEST}
-          onPress={() => alert('Pressed watering: ' + JSON.stringify(watering, null, 2))}>
-          <View>
-            <Text numberOfLines={1} style={{ fontWeight: 'bold', textAlign: 'center' }}>{name}</Text>
-            <Text numberOfLines={1} style={{ textAlign: 'center' }}>{type}</Text>
-          </View>
-        </TouchableHighlight>
-      )}
-    )}
+const renderRow = (row, idx) => (
+  <View 
+    key={idx}
+    style={{ 
+    ...styles.wateringsSubContainer, 
+    marginVertical: 10,
+    width: getWidthBasedOn(row.length),
+  }}>
+    {row.map(w => (<WateringCell key={w.id} watering={w} readOnly={false} />))}
   </View>
 )
 
-const renderTodayWaterings = (waterings) => {
-  const rows = R.splitEvery(3, waterings);
-  console.log(JSON.stringify(rows, null, 2))
-  return rows.map(renderRow)
-}
+const renderTodayWaterings = R.pipe(R.splitEvery(3), R.addIndex(R.map)(renderRow))
 
-const getDateString = (date) => {
-  const [ _, m, d ] = date.split('-');
+const getShortDateString = (dateString) => {
+  const [ _, m, d ] = dateString.split('-');
   return `${m}/${d}`
 }
 
-const EmptyToday = () => (
-  <View style={{ padding: 20 }}>
-    <Text style={{ 
-      textAlign: 'center',
-      color: COLORS.GRAY.LIGHTMED, 
-      fontWeight: 'bold', 
-      fontSize: 20 
-    }}>
-      No thirsty plants today!
-    </Text>
-  </View>
-)
-
-const TodayView = ({ waterings, overdue, date }) => {
-  const allWaterings = [ ...overdue, ...waterings ];
+const TodayView = ({ waterings, date }) => {
   return (
     <View style={styles.todayView}>
-      <Text style={{ ...styles.dateText, fontWeight: 'bold' }}>Today: {getDateString(date)}</Text>
-      {R.isEmpty(allWaterings) ? (<EmptyToday />) : renderTodayWaterings(allWaterings)}
+      <Text style={{ ...styles.dateText, fontWeight: 'bold' }}>Today: {date}</Text>
+      {R.isEmpty(waterings) ? 
+      (<View style={{ padding: 50, height: 140 }}>
+        <Text style={styles.headerText}>
+          No thirsty plants today!
+        </Text>
+      </View>
+      ) : renderTodayWaterings(waterings)}
     </View>
   )}
 
-const renderItemWithOverdue = (overdue) => ({ item: { date, waterings, isToday } }) => {
+const PastWaterings = ({ waterings }) => {
+  const individualWaterings = waterings.slice(0,3);
+  const row = waterings.slice(0, 2);
+  
+  if (waterings.length > 2) {
+    const group = waterings.slice(2);
+    if (group.length === 1)  {
+      row.push(group[0])
+    } else {
+      row.push(group);
+    }
+  }
+
+  return (
+  <View style={{ 
+    ...styles.wateringsSubContainer,
+     width: getWidthBasedOn(row.length),
+  }}>
+    {row.map(w => renderPreviousWatering(w))}
+  </View>
+)}
+
+const renderItems = ({ item: { date, waterings, isToday } }) => {
   return isToday ? (
-    <TodayView waterings={waterings} overdue={overdue} date={date} />
+    <TodayView waterings={waterings} date={date} />
   ) : (
     <View style={styles.calendarBox}>
-      <Text style={styles.dateText}>{getDateString(date)}</Text>
-      {renderWaterings(waterings)}
+      <Text style={styles.dateText}>{date}</Text>
+      <PastWaterings waterings={waterings} />
     </View>
   )
 }
 
-
-const Waterings = ({ waterings, overdue }) => {
-  waterings[0].isToday = true;
+const StreakView = ({ navigation, previousWaterings, dueWaterings }) => {
+  const data = [
+    { waterings: dueWaterings, date: toCalendarDay(getToday()), isToday: true, }, 
+    ...previousWaterings 
+  ];
+  
   return (
     <View style={ styles.mainViewFlex }>
+      <PreviousWateringModal navigation={navigation} />
+      <PendingWateringModal />
       <FlatList style={{ width: '90%' }} 
-                renderItem={renderItemWithOverdue(overdue)} 
-                data={waterings} 
-                ItemSeparatorComponent={FlatListItemSeparator}
+                renderItem={renderItems} 
+                data={data} 
                 keyExtractor={R.prop('date')}/>
     </View>
   );
@@ -200,45 +121,27 @@ const Waterings = ({ waterings, overdue }) => {
 
 const styles = StyleSheet.create({
   mainViewFlex,
-  entryText: {
-    fontWeight: 'bold',
-    paddingTop: 3,
-    paddingHorizontal: 3,
-  },
+  headerText,
   todayView: {
-    width: '100%',
     paddingTop: 30,
+    borderColor: 'black',
+    borderWidth: 1,
     backgroundColor: COLORS.GRAY.DARKEST,
-    display: 'flex',
   },
-  todayRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    height: 100,
-    width: '100%',
-    marginVertical: 10,
-  },
-  wateringCell: (overdue) => ({
-    backgroundColor: overdue ? COLORS.RED.BRIGHT : COLORS.GREEN.BRIGHT,
-    height: 100,
-    width: 100,
-    borderRadius: 100,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }),
   calendarBox: {
     backgroundColor: COLORS.GRAY.DARKEST,
-    display: 'flex',
     width: '100%',
-    height: 150,
-    paddingHorizontal: 20, 
+    height: 160,
+    borderColor: 'black',
+    borderWidth: 1,
+    paddingTop: 40, 
+    paddingBottom: 20,
   },
   wateringsSubContainer: {
+    height: 100,
     display: 'flex',
     flexDirection: 'row',
-    width: '80%'
+    justifyContent: 'space-around'
   },
   dateText: {
     color: COLORS.GREEN.BRIGHT,
@@ -248,20 +151,17 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 10,
-    display: 'flex',
-    paddingHorizontal: 20, 
     backgroundColor: "#000",
   }
 });
 
-
 const mapStateToProps = (state) => ({
-  waterings: allWateringsSelector(state),
-  overdue: overdueWateringsSelector(state),
+  previousWaterings: calendarListOfWateringsSelector(state),
+  dueWaterings: dueWateringsSelector(state),
 });
 
 const mapDispatchToProps = dispatch => (
   bindActionCreators({}, dispatch)
 );
 
-export default connect(mapStateToProps, mapDispatchToProps)(Waterings);
+export default connect(mapStateToProps, mapDispatchToProps)(StreakView);

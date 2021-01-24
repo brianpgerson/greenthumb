@@ -12,10 +12,10 @@ interface ConfigI {
 }
 
 const config: ConfigI = {
-  db_username: process.env.DB_USERNAME || '',
-  db_password: process.env.DB_PASSWORD || '',
-  db_name: process.env.DB_NAME || '',
-  db_host: process.env.DB_HOST || '',
+  db_username: process.env.AWS_DB_USERNAME || '',
+  db_password: process.env.AWS_DB_PASSWORD || '',
+  db_name: process.env.AWS_DB_NAME || '',
+  db_host: process.env.AWS_DB_HOST || '',
   db_dialect: 'postgres',
   jwt_secret: process.env.JWT_SECRET || '',
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || '',

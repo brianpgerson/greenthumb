@@ -9,11 +9,13 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { Icon } from 'react-native-elements'
 import { SwipeListView } from 'react-native-swipe-list-view';
 
-import { mainViewFlex, flexRow, COLORS } from '../common/common-styles';
+import { mainView, flexRow, COLORS, PADDING } from '../common/common-styles';
 import { createTwoButtonAlert } from '../common/alert';
+import { Card } from '../common/card';
+import { LabelText } from '../common/common-components';
+
 import { allPlantsSelector } from '../../selectors/plantSelectors';
 import { retrieveAndReloadPlants, deletePlant } from '../../middleware/plantApiThunks';
 
@@ -28,30 +30,23 @@ export const generateFormattedRule = (schedule) => {
 const onDeletePlant = async (plantId) => {
   try {
     const deleted = await deletePlant(plantId);
-    retrieveAndReloadPlants();
+    await retrieveAndReloadPlants();
   } catch (error) {
     createTwoButtonAlert('Error', 'There was an error deleting this plant! Try again later.');
   }
 } 
 
 const PlantCard = (navigation) => ({ item: plant }) => (
-  <View style={styles.item}>
+  <Card onPress={() => navigation.navigate('Add Plant', { plant })}>
     <View>
       <Text style={styles.title}>{plant.name}</Text>
       <View style={styles.flexRow}>
-        <Text style={{ color: COLORS.GREEN.BRIGHT }}>{plant.type} - </Text>
-        <Text style={{ color: COLORS.GREEN.BRIGHT }}>{generateFormattedRule(plant.schedule)}</Text>
+        <LabelText style={{ color: COLORS.GREEN.BRIGHT }}>{plant.type} - </LabelText>
+        <LabelText style={{ color: COLORS.GREEN.BRIGHT }}>{generateFormattedRule(plant.schedule)}</LabelText>
       </View>
     </View>
-    <View>
-      <Icon name="edit" 
-            color={COLORS.GREEN.BRIGHT} 
-            containerStyle={{ backgroundColor: COLORS.GREEN.DARK, padding: 6, borderRadius: 20 }} 
-            onPress={() => navigation.navigate('Add Plant', { plant })} />
-    </View>
-  </View>
+  </Card>
 )
-
 
 const renderHiddenItem = (data, rowMap) => (
   <View style={styles.rowBack}>
@@ -67,7 +62,14 @@ const renderHiddenItem = (data, rowMap) => (
 
 const MyPlants = ({ navigation, plants }) => {
   return (
-    <View style={ styles.mainViewFlex }>
+    <View style={ styles.mainView }>
+      <LabelText size='LARGE' styleOptions={{ 
+          paddingHorizontal: PADDING.MEDIUM, 
+          paddingTop: PADDING.LARGE,
+          paddingBottom: PADDING.MEDSMALL,
+          borderBottomColor: COLORS.GRAY.MEDIUM,
+          borderBottomWidth: 1,
+        }}>Manage Your Plants</LabelText>
       <SwipeListView
         style={{ width: '100%' }}
         data={plants}
@@ -88,18 +90,8 @@ const MyPlants = ({ navigation, plants }) => {
 }
 
 const styles = StyleSheet.create({
-  mainViewFlex,
+  mainView,
   flexRow,
-  item: {
-    backgroundColor: COLORS.GRAY.DARKEST,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginVertical: 8,
-    marginRight: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
   title: {
     color: COLORS.GREEN.BRIGHT,
     fontSize: 32,

@@ -24,10 +24,13 @@ export class Watering extends Model<Watering> {
   status!: string;
 
   @Column
-  startDate!: Date;
+  startDate!: string;
 
   @Column
-  endDate: Date;
+  endDate: string;
+
+  @Column
+  wateringDate: string;
 
   @CreatedAt
   @Column

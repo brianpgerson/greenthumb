@@ -4,7 +4,6 @@ import { Strategy } from 'passport-local';
 
 import { findUserByEmail } from '../../services/user-service'
 
-
 export interface UserI {
   email: string,
   password: string,
